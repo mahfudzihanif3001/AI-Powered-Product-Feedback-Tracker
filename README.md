@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🧠 AI-Powered Product Feedback Tracker
+
+Aplikasi **Product Feedback Tracker** berbasis CRUD dengan lapisan AI Enrichment yang secara otomatis mengklasifikasikan sentimen, kategori, dan menghasilkan ringkasan tindakan dari setiap feedback pengguna.
+
+## Tech Stack
+
+| Layer     | Technology                        |
+| --------- | --------------------------------- |
+| Framework | Next.js 16 (App Router)           |
+| Language  | TypeScript                        |
+| AI / LLM  | Google Gemini API (`gemini-2.5-flash`) |
+| Storage   | In-memory array (no database)     |
+| Styling   | Vanilla CSS (8pt grid, Inter font)|
+
+## Data Model
+
+```typescript
+interface FeedbackItem {
+  id: string;             // UUID
+  text: string;           // Raw feedback (user input)
+  status: string;         // 'open' | 'in-progress' | 'resolved'
+  sentiment: string;      // AI: 'positive' | 'negative' | 'neutral'
+  category: string;       // AI: 'Bug' | 'Feature' | 'UX' | 'Performance' | 'Other'
+  action_summary: string; // AI: one-sentence recommended action
+}
+```
+
+## API Endpoints
+
+| Endpoint              | Method   | Description                              |
+| --------------------- | -------- | ---------------------------------------- |
+| `/api/feedback`       | `POST`   | Submit feedback → AI enrichment → store  |
+| `/api/feedback`       | `GET`    | Retrieve all feedback items              |
+| `/api/feedback/[id]`  | `PATCH`  | Update status (`open`/`in-progress`/`resolved`) |
+| `/api/feedback/[id]`  | `DELETE` | Delete a feedback item                   |
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/mahfudzihanif3001/AI-Powered-Product-Feedback-Tracker.git
+cd AI-Powered-Product-Feedback-Tracker
+npm install
+```
+
+### 2. Setup Environment
+
+Buat file `.env.local` di root project:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+> Dapatkan API key gratis di [Google AI Studio](https://aistudio.google.com/app/apikey).
+
+### 3. Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── api/feedback/
+│   │   ├── route.ts          # GET & POST handlers
+│   │   └── [id]/route.ts     # PATCH & DELETE handlers
+│   ├── globals.css           # Design system & styles
+│   ├── layout.tsx            # Root layout (Inter font, metadata)
+│   └── page.tsx              # Main UI (client component)
+└── lib/
+    ├── types.ts              # FeedbackItem & AIEnrichment types
+    ├── store.ts              # In-memory CRUD storage
+    └── ai.ts                 # Gemini API integration & prompt
+```
 
-## Learn More
+## AI Enrichment Flow
 
-To learn more about Next.js, take a look at the following resources:
+1. User mengirim feedback via form → `POST /api/feedback`
+2. Server mengirim teks ke **Gemini API** dengan system prompt ketat
+3. Gemini mengembalikan JSON: `{ sentiment, category, action_summary }`
+4. Server memvalidasi output, menyimpan ke in-memory array, dan mengembalikan objek lengkap
+5. Frontend menampilkan badge sentiment, kategori, dan action summary
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Catatan
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **In-memory storage** — data akan hilang saat server restart (sesuai ketentuan project).
+- **No external database** — tidak memerlukan setup database apapun.
+- **LLM Agnostic** — dapat diganti ke provider lain (OpenAI, Groq, Ollama) dengan modifikasi minimal pada `src/lib/ai.ts`.
